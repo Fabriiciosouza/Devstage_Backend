@@ -1,0 +1,44 @@
+# Deployment e Service do Backend (API)
+# Gerencia a implantação e exposição da minha API no cluster.
+
+# Deployment da API: 2 pods
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 2 # 2 instâncias da API
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: giovanamori/devstage-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI # Conexão com o MongoDB (definido em outro arquivo)
+              value: "mongodb://root:example@mongo-service:27017/dev_stage?authSource=admin"
+
+---
+# Service do Backend: Expõe a API
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+      nodePort: 30500 # NodePort para acesso externo (mapeado pelo Kind)
+  type: NodePort

@@ -1,0 +1,19 @@
+# Configuração do Cluster Kind
+# Define como o cluster Kind mapeia portas do Kubernetes para meu localhost.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Frontend: NodePort 30000 -> localhost:3000 (para acesso no navegador)
+      - containerPort: 30000
+        hostPort: 3000
+        protocol: TCP
+      # Backend: NodePort 30500 -> localhost:5000 (frontend se conecta aqui)
+      - containerPort: 30500
+        hostPort: 5000
+        protocol: TCP
+      # MongoDB: NodePort 30001 -> localhost:27017 (para Compass)
+      - containerPort: 30001
+        hostPort: 27017
+        protocol: TCP

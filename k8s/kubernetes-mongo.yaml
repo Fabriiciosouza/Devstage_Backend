@@ -1,0 +1,56 @@
+# StatefulSet e Service do MongoDB
+# Gerencia a implantação e exposição do meu banco de dados MongoDB.
+
+# StatefulSet do MongoDB: 1 pod com volume persistente
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: mongo-service
+  replicas: 1 # Apenas 1 instância do MongoDB
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:6
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "root"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "example"
+          volumeMounts:
+            - name: mongo-data
+              mountPath: "/data/db"
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi # 1GB de armazenamento para os dados
+
+---
+# Service do MongoDB: Expõe o banco de dados
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+      nodePort: 30001 # NodePort para acesso externo (ex: MongoDB Compass)
+  type: NodePort
