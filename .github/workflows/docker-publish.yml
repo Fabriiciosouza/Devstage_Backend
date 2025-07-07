@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  DOCKERHUB_REPO: fabriiciosouza/devstage_backend
+  DOCKERHUB_REPO: fafa014/devstage_backend
 
 jobs:
   docker:
