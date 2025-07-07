@@ -1,20 +1,59 @@
-# Configuração do Cluster Kind
-# Define como o cluster Kind mapeia portas do Kubernetes para meu localhost.
+# ========================================
+# CONFIGURAÇÃO DO CLUSTER KIND (Kubernetes in Docker)
+# ========================================
+# Kind é uma ferramenta para executar clusters Kubernetes locais usando containers Docker
+# Este arquivo define como o cluster será configurado e como as portas serão mapeadas
+
+# Tipo de recurso Kubernetes que estamos definindo
 kind: Cluster
+
+# Versão da API do Kind para compatibilidade
 apiVersion: kind.x-k8s.io/v1alpha4
+
+# Configuração dos nós do cluster
 nodes:
+  # Definindo um único nó que será o control-plane (mestre do cluster)
   - role: control-plane
+
+    # Mapeamento de portas extras para permitir acesso externo aos serviços
+    # Isso permite que aplicações rodando dentro do cluster sejam acessíveis do host
     extraPortMappings:
-    #test
-      # Frontend: NodePort 30000 -> localhost:3000 (para acesso no navegador)
-      - containerPort: 30000
-        hostPort: 3000
-        protocol: TCP
-      # Backend: NodePort 30500 -> localhost:5000 (frontend se conecta aqui)
-      - containerPort: 30500
-        hostPort: 5000
-        protocol: TCP
-      # MongoDB: NodePort 30001 -> localhost:27017 (para Compass)
-      - containerPort: 30001
-        hostPort: 27017
-        protocol: TCP
+      # =====================================
+      # MAPEAMENTO DE PORTA PARA FRONTEND
+      # =====================================
+      # Mapeia a porta 30000 do cluster para porta 3000 do localhost
+      # Permite acessar o frontend através de http://localhost:3000
+      - containerPort: 30000 # Porta do NodePort service no cluster
+        hostPort: 3000 # Porta no localhost onde será acessível
+        protocol: TCP # Protocolo de comunicação
+
+      # =====================================
+      # MAPEAMENTO DE PORTA PARA BACKEND
+      # =====================================
+      # Mapeia a porta 30500 do cluster para porta 5000 do localhost
+      # Permite que o frontend se conecte ao backend via http://localhost:5000
+      - containerPort: 30500 # Porta do NodePort service do backend
+        hostPort: 5000 # Porta no localhost onde o backend será acessível
+        protocol: TCP # Protocolo de comunicação
+
+      # =====================================
+      # MAPEAMENTO DE PORTA PARA MONGODB
+      # =====================================
+      # Mapeia a porta 30001 do cluster para porta 27017 do localhost
+      # Permite conectar ao MongoDB usando ferramentas como MongoDB Compass
+      - containerPort: 30001 # Porta do NodePort service do MongoDB
+        hostPort: 27017 # Porta padrão do MongoDB no localhost
+        protocol: TCP # Protocolo de comunicação
+
+# ========================================
+# COMO FUNCIONA:
+# ========================================
+# 1. O Kind cria um cluster Kubernetes dentro de containers Docker
+# 2. Os serviços dentro do cluster usam NodePort para expor portas
+# 3. Este arquivo mapeia essas portas NodePort para portas do localhost
+# 4. Resultado: você pode acessar os serviços como se estivessem rodando localmente
+#
+# Exemplo de uso:
+# - Frontend: http://localhost:3000
+# - Backend API: http://localhost:5000/api
+# - MongoDB: mongodb://localhost:27017

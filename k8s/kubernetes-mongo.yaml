@@ -1,56 +1,118 @@
-# StatefulSet e Service do MongoDB
-# Gerencia a implantação e exposição do meu banco de dados MongoDB.
+# ========================================
+# CONFIGURAÇÃO DO MONGODB NO KUBERNETES
+# ========================================
+# Este arquivo define como o MongoDB será executado no cluster Kubernetes
+# Usa StatefulSet para persistência de dados e Service para exposição
 
-# StatefulSet do MongoDB: 1 pod com volume persistente
+# ========================================
+# STATEFULSET DO MONGODB
+# ========================================
+# StatefulSet é usado para aplicações com estado (como bancos de dados)
+# Garante ordem de criação, nomes únicos e volumes persistentes
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mongo
+  name: mongo # Nome do StatefulSet
 spec:
+  # Nome do Service que será criado para comunicação interna
   serviceName: mongo-service
-  replicas: 1 # Apenas 1 instância do MongoDB
+
+  # Número de réplicas (instâncias) do MongoDB
+  replicas: 1 # Apenas 1 instância para desenvolvimento (produção pode ter mais)
+
+  # Seletor que conecta o StatefulSet aos Pods
   selector:
     matchLabels:
-      app: mongo
+      app: mongo # Deve corresponder às labels dos Pods
+
+  # Template que define como cada Pod será criado
   template:
     metadata:
       labels:
-        app: mongo
+        app: mongo # Labels aplicadas a cada Pod criado
     spec:
+      # Configuração dos containers dentro de cada Pod
       containers:
-        - name: mongo
+        - name: mongo # Nome do container
+          # Imagem oficial do MongoDB versão 6
           image: mongo:6
+
+          # Portas que o container vai expor
           ports:
-            - containerPort: 27017
+            - containerPort: 27017 # Porta padrão do MongoDB
+
+          # Variáveis de ambiente para configurar o MongoDB
           env:
+            # Usuário root (administrador) do MongoDB
             - name: MONGO_INITDB_ROOT_USERNAME
               value: "root"
+
+            # Senha do usuário root
             - name: MONGO_INITDB_ROOT_PASSWORD
               value: "example"
+
+          # Montagem de volumes para persistência de dados
           volumeMounts:
-            - name: mongo-data
-              mountPath: "/data/db"
+            - name: mongo-data # Nome do volume (definido abaixo)
+              mountPath: "/data/db" # Pasta onde o MongoDB armazena os dados
+
+  # Templates de volumes persistentes
+  # Cada Pod criado terá seu próprio volume persistente
   volumeClaimTemplates:
     - metadata:
-        name: mongo-data
+        name: mongo-data # Nome do volume
       spec:
-        accessModes: ["ReadWriteOnce"]
+        # Modos de acesso ao volume
+        accessModes: ["ReadWriteOnce"] # Apenas um Pod pode escrever por vez
+
+        # Recursos solicitados para o volume
         resources:
           requests:
-            storage: 1Gi # 1GB de armazenamento para os dados
-#testes4
+            storage: 1Gi # 1GB de armazenamento para os dados do MongoDB
+
 ---
-# Service do MongoDB: Expõe o banco de dados
+# ========================================
+# SERVICE DO MONGODB
+# ========================================
+# Service expõe o MongoDB para comunicação interna e externa
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-service
+  name: mongo-service # Nome usado pelo backend para conectar (mongo-service:27017)
 spec:
+  # Seletor que define quais Pods este Service vai expor
   selector:
-    app: mongo
+    app: mongo # Seleciona todos os Pods com label 'app: mongo'
+
+  # Configuração das portas
   ports:
-    - protocol: TCP
-      port: 27017
-      targetPort: 27017
-      nodePort: 30001 # NodePort para acesso externo (ex: MongoDB Compass)
-  type: NodePort
+    - protocol: TCP # Protocolo de comunicação
+      port: 27017 # Porta do Service (para comunicação interna no cluster)
+      targetPort: 27017 # Porta do container MongoDB
+      nodePort: 30001 # Porta externa do cluster (acesso via localhost:27017)
+
+  # Tipo de Service
+  type: NodePort # Permite acesso externo para ferramentas como MongoDB Compass
+
+# ========================================
+# COMO FUNCIONA:
+# ========================================
+# 1. O StatefulSet cria 1 Pod executando MongoDB
+# 2. O Pod tem um volume persistente de 1GB para armazenar dados
+# 3. O Service expõe o MongoDB internamente na porta 27017
+# 4. O NodePort 30001 permite acesso externo (mapeado para localhost:27017 pelo Kind)
+# 5. Os dados persistem mesmo se o Pod for reiniciado
+#
+# Fluxo de comunicação:
+# - Interna: backend conecta via 'mongo-service:27017'
+# - Externa: MongoDB Compass conecta via 'localhost:27017'
+#
+# Credenciais:
+# - Usuário: root
+# - Senha: example
+# - Banco: dev_stage (criado automaticamente pela aplicação)
+#
+# Persistência:
+# - Dados armazenados em volume persistente de 1GB
+# - Dados não são perdidos quando Pod é reiniciado
+# - StatefulSet garante ordem e identidade única do Pod

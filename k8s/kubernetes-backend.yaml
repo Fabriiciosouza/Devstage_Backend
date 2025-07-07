@@ -1,44 +1,95 @@
-# Deployment e Service do Backend (API)
-# Gerencia a implantação e exposição da minha API no cluster.
+# ========================================
+# CONFIGURAÇÃO DO BACKEND NO KUBERNETES
+# ========================================
+# Este arquivo define como o backend (API) será executado no cluster Kubernetes
+# Inclui tanto o Deployment (como executar) quanto o Service (como expor)
 
-# Deployment da API: 2 pods
+# ========================================
+# DEPLOYMENT DO BACKEND
+# ========================================
+# Um Deployment gerencia a criação e manutenção de Pods da aplicação
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
+  name: api # Nome do deployment
 spec:
-  replicas: 2 # 2 instâncias da API
+  # Quantas instâncias (réplicas) da API queremos executar
+  replicas: 2 # 2 instâncias para alta disponibilidade e balanceamento de carga
+
+  # Seletor que conecta o Deployment aos Pods
   selector:
     matchLabels:
-      app: api
+      app: api # Deve corresponder às labels dos Pods
+
+  # Template que define como cada Pod será criado
   template:
     metadata:
       labels:
-        app: api
+        app: api # Labels aplicadas a cada Pod criado
     spec:
+      # Configuração dos containers dentro de cada Pod
       containers:
-        - name: api
+        - name: api # Nome do container
+          # Imagem Docker que será executada (do Docker Hub)
           image: fafa014/devstage_backend:latest
+
+          # Portas que o container vai expor
           ports:
-            - containerPort: 5000
+            - containerPort: 5000 # Porta onde a API estará escutando
+
+          # Variáveis de ambiente para configurar a aplicação
           env:
+            # Porta que a aplicação Node.js vai usar
             - name: PORT
               value: "5000"
-            - name: MONGO_URI # Conexão com o MongoDB (definido em outro arquivo)
+
+            # String de conexão com o MongoDB
+            # Conecta ao serviço 'mongo-service' na porta 27017
+            - name: MONGO_URI
               value: "mongodb://root:example@mongo-service:27017/dev_stage?authSource=admin"
+              # Breakdown da URI:
+              # - root:example = usuário e senha do MongoDB
+              # - mongo-service = nome do serviço do MongoDB no cluster
+              # - 27017 = porta padrão do MongoDB
+              # - dev_stage = nome do banco de dados
+              # - authSource=admin = banco onde as credenciais estão armazenadas
 
 ---
-# Service do Backend: Expõe a API
+# ========================================
+# SERVICE DO BACKEND
+# ========================================
+# Um Service expõe os Pods e permite comunicação com eles
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend-service # Nome do service (usado para comunicação interna)
 spec:
+  # Seletor que define quais Pods este Service vai expor
   selector:
-    app: api
+    app: api # Seleciona todos os Pods com label 'app: api'
+
+  # Configuração das portas
   ports:
-    - protocol: TCP
-      port: 5000
-      targetPort: 5000
-      nodePort: 30500 # NodePort para acesso externo (mapeado pelo Kind)
-  type: NodePort
+    - protocol: TCP # Protocolo de comunicação
+      port: 5000 # Porta do Service (para comunicação interna no cluster)
+      targetPort: 5000 # Porta do container que receberá o tráfego
+      nodePort: 30500 # Porta externa do cluster (acesso via localhost:5000)
+
+  # Tipo de Service
+  type: NodePort # Permite acesso externo ao cluster através de uma porta específica
+
+# ========================================
+# COMO FUNCIONA:
+# ========================================
+# 1. O Deployment cria 2 Pods executando a API
+# 2. Cada Pod executa um container com a imagem do Docker Hub
+# 3. O Service expõe esses Pods internamente na porta 5000
+# 4. O NodePort 30500 permite acesso externo (mapeado para localhost:5000 pelo Kind)
+# 5. O Service faz load balancing automático entre os 2 Pods
+#
+# Fluxo de comunicação:
+# localhost:5000 → NodePort 30500 → Service port 5000 → Pod targetPort 5000
+#
+# Variáveis de ambiente:
+# - PORT: Informa à aplicação Node.js qual porta usar
+# - MONGO_URI: String de conexão com o MongoDB no cluster
