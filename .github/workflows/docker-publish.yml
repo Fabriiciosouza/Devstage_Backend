@@ -40,6 +40,9 @@ jobs:
         with:
           context: . # Contexto do build (diretório atual)
           push: true # Habilita o push para o registry
-          tags: | # Lista de tags que serão aplicadas à imagem
-            ${{ env.DOCKERHUB_REPO }}:latest           # Tag 'latest' para sempre apontar para a versão mais recente
-            ${{ env.DOCKERHUB_REPO }}:${{ github.sha }} # Tag com o SHA do commit para versionamento específico
+          # Lista de tags que serão aplicadas à imagem:
+          # - Tag 'latest' para sempre apontar para a versão mais recente
+          # - Tag com o SHA do commit para versionamento específico
+          tags: |
+            ${{ env.DOCKERHUB_REPO }}:latest
+            ${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
