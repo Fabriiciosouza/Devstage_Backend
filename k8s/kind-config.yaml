@@ -5,6 +5,7 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     extraPortMappings:
+    #test
       # Frontend: NodePort 30000 -> localhost:3000 (para acesso no navegador)
       - containerPort: 30000
         hostPort: 3000
