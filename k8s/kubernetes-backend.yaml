@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: giovanamori/devstage-backend:latest
+          image: fafa014/devstage_backend:latest
           ports:
             - containerPort: 5000
           env:
