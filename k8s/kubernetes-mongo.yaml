@@ -39,6 +39,7 @@ spec:
           requests:
             storage: 1Gi # 1GB de armazenamento para os dados
 #testes4
+---
 # Service do MongoDB: Expõe o banco de dados
 apiVersion: v1
 kind: Service
